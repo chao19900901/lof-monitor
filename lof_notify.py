@@ -591,7 +591,7 @@ def main():
     load_dotenv()  # 优先从本地 .env 文件加载 SERVERCHAN_KEY
 
     sendkeys = ["SCT348643TPeDG7b88AeaCEbpc4uqvPKv2","SCT348625TeaJCpA5WwJh1WDaoGcZe1BwT"]
-    # sendkey =""
+    sendkey ="123"
     # for i in ["", "1", "2", "3", "4", "5"]:
     #     sendkey = os.environ.get(f"SERVERCHAN_KEY{i}", "").strip()
     #     if sendkey:
