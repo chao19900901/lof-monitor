@@ -640,7 +640,7 @@ def main():
     #     send_wechat(title, content, sendkey)
     for sendkey in sendkeys:
         send_wechat(title, content, sendkey)
-        print(发送 key是sendkey)
+        print(f"发送 key是: {sendkey}")
     
     feishu_app_id     = os.environ.get("FEISHU_APP_ID", "")
     feishu_app_secret = os.environ.get("FEISHU_APP_SECRET", "")
