@@ -378,7 +378,7 @@ def build_wechat_message(rows, now_str):
 
 # ─── Server酱推送 ─────────────────────────────────────────────────────────────
 
-def send_wechat(title, content, ):
+def send_wechat(title, content, sendkey):
     """通过 Server酱 推送微信消息"""
     url = f"https://sctapi.ftqq.com/{sendkey}.send"
     try:
