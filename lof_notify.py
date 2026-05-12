@@ -590,12 +590,7 @@ def main():
 
     load_dotenv()  # 优先从本地 .env 文件加载 SERVERCHAN_KEY
 
-    sendkey = next((os.environ.get(k, "") for k in [
-    "SERVERCHAN_KEY",
-    "SERVERCHAN_KEY1",
-    "SERVERCHAN_KEY2",
-    "SERVERCHAN_KEY3"
-] if os.environ.get(k, "")), "")
+    sendkey_list = [os.environ.get(k, "") for k in ["SERVERCHAN_KEY", "SERVERCHAN_KEY1", "SERVERCHAN_KEY2"] if os.environ.get(k, "")]
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     if args.local:
@@ -636,8 +631,10 @@ def main():
     print(content)
     print(f"{'─'*60}\n")
 
-    if sendkey:
-        send_wechat(title, content, sendkey)
+    # if sendkey:
+    #     send_wechat(title, content, sendkey)
+    for sendkey in sendkey_list:
+    send_wechat(title, content, sendkey)
     
     feishu_app_id     = os.environ.get("FEISHU_APP_ID", "")
     feishu_app_secret = os.environ.get("FEISHU_APP_SECRET", "")
