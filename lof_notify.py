@@ -638,7 +638,7 @@ def main():
 
     # if sendkey:
     #     send_wechat(title, content, sendkey)
-    for sendkey in sendkey_list:
+    for sendkey in sendkeys:
         send_wechat(title, content, sendkey)
     
     feishu_app_id     = os.environ.get("FEISHU_APP_ID", "")
