@@ -590,7 +590,12 @@ def main():
 
     load_dotenv()  # 优先从本地 .env 文件加载 SERVERCHAN_KEY
 
-    sendkey = os.environ.get("SERVERCHAN_KEY", "")
+    sendkey = next((os.environ.get(k, "") for k in [
+    "SERVERCHAN_KEY",
+    "SERVERCHAN_KEY1",
+    "SERVERCHAN_KEY2",
+    "SERVERCHAN_KEY3"
+] if os.environ.get(k, "")), "")
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     if args.local:
