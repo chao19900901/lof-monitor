@@ -378,7 +378,7 @@ def build_wechat_message(rows, now_str):
 
 # ─── Server酱推送 ─────────────────────────────────────────────────────────────
 
-def send_wechat(title, content, sendkey):
+def send_wechat(title, content, ):
     """通过 Server酱 推送微信消息"""
     url = f"https://sctapi.ftqq.com/{sendkey}.send"
     try:
@@ -590,7 +590,7 @@ def main():
 
     load_dotenv()  # 优先从本地 .env 文件加载 SERVERCHAN_KEY
 
-    sendkeys = ["SCT348643TPeDG7b88AeaCEbpc4uqvPKv2","SCT348625TeaJCpA5WwJh1WDaoGcZe1BwT","SCT348719TRYV90SZ6SujEIaE4bwMFub7Q"]
+    sendkeys = ["SCT348643TPeDG7b88AeaCEbpc4uqvPKv2","SCT348625TeaJCpA5WwJh1WDaoGcZe1BwT","SCT348719TRYV90SZ6SujEIaE4bwMFub7Q","SCT348724TwhQxyd8VBZJxnOFNJyffnxBu"]
     sendkey ="123"
     # for i in ["", "1", "2", "3", "4", "5"]:
     #     sendkey = os.environ.get(f"SERVERCHAN_KEY{i}", "").strip()
