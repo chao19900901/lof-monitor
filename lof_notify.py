@@ -657,7 +657,7 @@ def merge(premium_map, price_map, quota_map):
             "status": q["status"], "status_text": q["status_text"],
             "quota": q["quota"], "big_quota": q["big_quota"],
         })
-    rows.sort(key=lambda x: (x["premium"] or -999), reverse=False)
+    rows.sort(key=lambda x: (x["premium"] or -999), reverse=True)
     return rows
 
 # ─── 格式化 ──────────────────────────────────────────────────────────────────
@@ -691,7 +691,7 @@ def build_wechat_message(rows, now_str):
 
     stale_est = any(r.get("est_date") and r["est_date"] != today for r in rows)
 
-    arb = [r for r in rows if (r["premium"] or 0) < 0 and r["status"] in ("open", "limited")]
+    arb = [r for r in rows if (r["premium"] or 0) > 0 and r["status"] in ("open", "limited")]
     all_pos = [r for r in rows if (r["premium"] or 0) > 0]
 
     title = f"LOF溢价提醒 {now_str}｜{len(arb)}只套利机会"
@@ -917,10 +917,10 @@ def print_local_table(rows, now_str):
     print(sep)
 
     # 汇总行
-    arb_rows    = [r for r in rows if (r["premium"] or 0) < 0 and r["status"] in ("open","limited")]
-    closed_rows = [r for r in rows if (r["premium"] or 0) < 0 and r["status"] not in ("open","limited")]
+    arb_rows    = [r for r in rows if (r["premium"] or 0) > 0 and r["status"] in ("open","limited")]
+    closed_rows = [r for r in rows if (r["premium"] or 0) > 0 and r["status"] not in ("open","limited")]
 
-    print(f"\n  {BOLD}套利机会{RESET}（负溢价且可申购）：{GREEN}{BOLD}{arb_count} 只{RESET}")
+    print(f"\n  {BOLD}套利机会{RESET}（正溢价且可申购）：{RED}{BOLD}{arb_count} 只{RESET}")
     if arb_rows:
         for r in arb_rows:
             sign = "+" if (r["premium"] or 0) > 0 else ""
