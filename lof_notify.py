@@ -693,20 +693,27 @@ def build_wechat_message(rows, now_str):
 
     arb = [r for r in rows if (r["premium"] or 0) > 0 and r["status"] in ("open", "limited")]
     all_pos = [r for r in rows if (r["premium"] or 0) > 0]
+    # 新增：负溢价（折价）相关数据筛选
+    discount = [r for r in rows if (r["premium"] or 0) < 0]  # 所有折价基金
+    discount_top10 = sorted(discount, key=lambda x: (x["premium"] or 999))[:10]  # 折价最多的前10只
 
-    title = f"LOF溢价提醒 {now_str}｜{len(arb)}只套利机会"
-    if not arb:
-        title = f"LOF溢价提醒 {now_str}｜暂无套利机会"
+    title = f"LOF溢价提醒 {now_str}｜{len(arb)}只套利机会｜{len(discount)}只折价"
+    if not arb and not discount:
+        title = f"LOF溢价提醒 {now_str}｜暂无套利/折价机会"
+    elif not arb:
+        title = f"LOF溢价提醒 {now_str}｜暂无套利机会｜{len(discount)}只折价"
+    elif not discount:
+        title = f"LOF溢价提醒 {now_str}｜{len(arb)}只套利机会｜暂无折价"
 
-    lines = [f"## LOF 溢价追踪 · {now_str}", ""]
+    lines = [f"## LOF 溢价/折价追踪 · {now_str}", ""]
 
     if stale_est:
         lines.append("> ⚠️ 部分基金EST日期非今日，溢价率可能存在滞后，已显示参考EST溢价（如有）")
         lines.append("")
 
-    # 套利机会
+    # 套利机会（正溢价）
     if arb:
-        lines.append(f"### ⚡ 套利机会（{len(arb)}只）")
+        lines.append(f"### ⚡ 套利机会（正溢价｜{len(arb)}只）")
         lines.append("")
         lines.append("| 基金 | 溢价 | 限额 | 状态 |")
         lines.append("|------|------|------|------|")
@@ -719,7 +726,7 @@ def build_wechat_message(rows, now_str):
             )
         lines.append("")
     else:
-        lines.append("### 暂无套利机会")
+        lines.append("### ⚡ 套利机会（正溢价）｜暂无")
         lines.append("")
 
     # 所有溢价基金（含暂停申购的）
@@ -732,8 +739,26 @@ def build_wechat_message(rows, now_str):
                 lines.append(f"- {r['name']} `{r['full_code']}` 溢价 **{prem_cell(r, bold=False)}** · {r['status_text']}")
             lines.append("")
 
-    # 全部排名（折叠展示前10）
-    lines.append("### 📊 溢价率排行（前10）")
+    # 新增：负溢价（折价）表格
+    if discount:
+        lines.append(f"### 📉 折价排行（负溢价｜前10只）")
+        lines.append("")
+        lines.append("| 排名 | 基金 | 折价率 | 限额 | 状态 |")
+        lines.append("|------|------|--------|------|------|")
+        for i, r in enumerate(discount_top10, 1):
+            lines.append(
+                f"| {i} | {r['name']} `{r['full_code']}` "
+                f"| {prem_cell(r, bold=False)} "
+                f"| {fmt_money(r['quota'])} "
+                f"| {r['status_text']} |"
+            )
+        lines.append("")
+    else:
+        lines.append("### 📉 折价排行（负溢价）｜暂无")
+        lines.append("")
+
+    # 全部溢价率排行（保留原前10，可按需调整）
+    lines.append("### 📊 全量溢价率排行（前10）")
     lines.append("")
     lines.append("| 排名 | 基金 | 溢价率 | 限额 |")
     lines.append("|------|------|--------|------|")
