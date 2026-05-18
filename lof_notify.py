@@ -327,13 +327,13 @@ def build_wechat_message(rows, now_str):
     discount = [r for r in rows if (r["premium"] or 0) < 0]  # 所有折价基金
     discount_top10 = sorted(discount, key=lambda x: (x["premium"] or 999))[:10]  # 折价最多的前10只
 
-    title = f"LOF溢价提醒 {now_str}｜{len(arb)}只套利机会｜{len(discount)}只折价"
+    title = f"LOF溢价提醒 {now_str} ｜ ***{len(arb)} 只套利机会 ｜ ***{len(discount)} 只折价"
     if not arb and not discount:
         title = f"LOF溢价提醒 {now_str}｜暂无套利/折价机会"
     elif not arb:
-        title = f"LOF溢价提醒 {now_str}｜暂无套利机会｜{len(discount)}只折价"
+        title = f"LOF溢价提醒 {now_str} ｜ ***暂无套利机会 ｜ ***{len(discount)} 只折价"
     elif not discount:
-        title = f"LOF溢价提醒 {now_str}｜{len(arb)}只套利机会｜暂无折价"
+        title = f"LOF溢价提醒 {now_str} ｜ ***{len(arb)} 只套利机会 ｜ ***暂无折价"
 
     lines = [f"## LOF 溢价/折价追踪 · {now_str}", ""]
 
