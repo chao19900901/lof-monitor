@@ -11,7 +11,7 @@ on:
     
   push:
   schedule:
-    # - cron: '30 1 * * 1-5'  # 你原来的时间不变
+    - cron: '30 1 * * 1-5'  # 你原来的时间不变
     # - cron: '0 6 * * 1-5'  # 你原来的时间不变
 # ✅ 关键修复1：防止 GitHub 暂停定时
 permissions:
