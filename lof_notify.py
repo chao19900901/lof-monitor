@@ -334,7 +334,7 @@ def build_wechat_message(rows, now_str):
         title = f"LOF溢价提醒 {now_str}  |  暂无套利机会  |  【{len(discount)}】只折价"
     elif not discount:
         title = f"LOF溢价提醒 {now_str}  |  【{len(arb)}】只套利机会  |  暂无折价"
-    lines = [f"## LOF 溢价/折价追踪 · {now_str}", ""]
+    lines = [f"## LOF基金 溢价/折价追踪 · {now_str}", ""]
 
     if stale_est:
         lines.append("> ⚠️ 部分基金EST日期非今日，溢价率可能存在滞后，已显示参考EST溢价（如有）")
