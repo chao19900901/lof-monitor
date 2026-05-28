@@ -37,43 +37,6 @@ def load_dotenv(path=".env"):
 
 
 # ─── 基金列表 ────────────────────────────────────────────────────────────────
-FUNDS = [
-    ("SH501300", "501300", "美元债LOF"),
-    ("SZ160140", "160140", "美国REIT精选LOF"),
-    ("SZ161126", "161126", "标普医疗保健LOF"),
-    ("SZ161128", "161128", "标普信息科技LOF"),
-    ("SZ162415", "162415", "美国消费LOF"),
-    ("SZ164824", "164824", "印度基金LOF"),
-    ("SZ164906", "164906", "中概互联网LOF"),
-    ("SZ161127", "161127", "标普生物科技LOF"),
-    ("SZ162411", "162411", "华宝油气LOF"),
-    ("SZ160416", "160416", "石油基金LOF"),
-    ("SZ162719", "162719", "石油LOF"),
-    ("SZ163208", "163208", "全球油气能源LOF"),
-    ("SZ161815", "161815", "抗通胀LOF"),
-    ("SZ161130", "161130", "纳斯达克100LOF"),
-    ("SZ161125", "161125", "标普500LOF"),
-    ("SH501225", "501225", "全球芯片LOF"),
-    ("SH501312", "501312", "海外科技LOF"),
-    ("SZ160644", "160644", "港美互联网LOF"),
-    ("SZ160216", "160216", "国泰商品LOF"),
-    ("SZ160719", "160719", "嘉实黄金LOF"),
-    ("SZ161116", "161116", "黄金主题LOF"),
-    ("SZ164701", "164701", "黄金LOF"),
-    ("SZ165513", "165513", "中信保诚商品LOF"),
-    ("SH501018", "501018", "南方原油LOF"),
-    ("SZ160723", "160723", "嘉实原油LOF"),
-    ("SZ161129", "161129", "原油LOF易方达"),
-    ("SH501025", "501025", "香港银行LOF"),
-    ("SZ161124", "161124", "港股小盘LOF"),
-    ("SZ160717", "160717", "H股LOF"),
-    ("SZ161831", "161831", "恒生国企LOF"),
-    ("SH501302", "501302", "恒生指数基金LOF"),
-    ("SZ160924", "160924", "恒生指数LOF"),
-    ("SZ164705", "164705", "恒生LOF"),
-    ("SH501043", "501043", "沪深300LOF"),
-    ("SZ161226", "161226", "国投白银LOF"),
-]
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36",
@@ -94,10 +57,11 @@ def fetch_premium():
         m = re.search(r'id="estimationtable".*?<tbody>(.*?)</tbody>', html, re.S)
         if not m:
             print("  未找到 estimationtable")
-            return {}
+            return {}, []
 
         tbody = m.group(1)
         result = {}
+        fund_list = []  # 新增：保存基金列表 [(full_code, code6, name), ...]
 
         for row_m in re.finditer(r'<tr>(.*?)</tr>', tbody, re.S):
             cells = re.findall(r'<td[^>]*>(.*?)</td>', row_m.group(1), re.S)
@@ -108,6 +72,11 @@ def fetch_premium():
             if not code_m:
                 continue
             full_code = code_m.group(1)
+            code6 = full_code[2:]  # 提取6位代码
+
+            # 提取基金名称（在 <td> 标签的 title 属性中）
+            name_m = re.search(r'<td[^>]*title="([^"]+)"', row_m.group(1))
+            name = name_m.group(1) if name_m else '未知'
 
             est_m = re.search(r'>([\d.]+)<', cells[1])
             est = float(est_m.group(1)) if est_m else None
@@ -128,18 +97,21 @@ def fetch_premium():
                 "est_date": est_date,
                 "premium": premium,
                 "ref_premium": ref_premium,
+                "name": name,  # 保存基金名称
             }
+            
+            fund_list.append((full_code, code6, name))
 
         print(f"  完成：{len(result)} 只")
-        return result
+        return result, fund_list
     except Exception as e:
         print(f"  溢价获取失败: {e}")
-        return {}
+        return {}, []
 
-def fetch_prices():
+def fetch_prices(fund_list):
     print("获取实时行情...")
     codes = ",".join(
-        ("sh" if f[0].startswith("SH") else "sz") + f[1] for f in FUNDS
+        ("sh" if f[0].startswith("SH") else "sz") + f[1] for f in fund_list
     )
     try:
         r = requests.get(
@@ -252,14 +224,14 @@ def fetch_quota_page(code6):
         print(f"  网页抓取失败 {code6}: {e}")
         return {"status": "error", "status_text": "查询失败", "quota": None, "big_quota": None}
 
-def fetch_quota():
+def fetch_quota(fund_list):
     print("获取限购状态...")
-    all_codes = [f[1] for f in FUNDS]
+    all_codes = [f[1] for f in fund_list]
     result = {}
     for i in range(0, len(all_codes), 20):
         result.update(fetch_quota_batch(all_codes[i:i+20]))
         time.sleep(0.5)
-    failed = [f[1] for f in FUNDS if f[1] not in result]
+    failed = [f[1] for f in fund_list if f[1] not in result]
     if failed:
         print(f"  App API 未返回 {len(failed)} 只，改用网页...")
         for code6 in failed:
@@ -268,9 +240,9 @@ def fetch_quota():
     print(f"  完成")
     return result
 
-def merge(premium_map, price_map, quota_map):
+def merge(premium_map, price_map, quota_map, fund_list):
     rows = []
-    for full_code, code6, name in FUNDS:
+    for full_code, code6, name in fund_list:
         p = price_map.get(full_code, {})
         e = premium_map.get(full_code, {})
         q = quota_map.get(code6, {"status": "error", "status_text": "查询失败", "quota": None, "big_quota": None})
@@ -630,12 +602,15 @@ def main():
 
     if args.local:
         print(f"=== [本地模式] LOF溢价监控 {now_str} ===")
-        premium_map = fetch_premium()
+        premium_map, fund_list = fetch_premium()
+        if not fund_list:
+            print("  未获取到基金列表，退出")
+            return
         time.sleep(0.5)
-        price_map = fetch_prices()
+        price_map = fetch_prices(fund_list)
         time.sleep(0.5)
-        quota_map = fetch_quota()
-        rows = merge(premium_map, price_map, quota_map)
+        quota_map = fetch_quota(fund_list)
+        rows = merge(premium_map, price_map, quota_map, fund_list)
         print_local_table(rows, now_str)
         return  # 本地模式到此结束，不写 CSV，不推送
 
@@ -646,16 +621,29 @@ def main():
         title, content = build_wechat_message(rows, now_str)
         # 测试模式在标题加【测试】标记，便于在微信中识别
         title = f"【测试】{title}"
+        
+        # 始终在终端打印完整消息，便于本地核查
+        print(f"\n{'─'*60}")
+        print(f"标题：{title}")
+        print(f"{'─'*60}")
+        print(content)
+        print(f"{'─'*60}\n")
+        
+        print("💡 测试模式：不发送微信/飞书推送")
+        return  # 测试模式到此结束，不推送
     else:
         if not sendkey:
             print("⚠️  未设置 SERVERCHAN_KEY 环境变量，将跳过微信推送")
         print(f"=== LOF溢价监控 {now_str} ===")
-        premium_map = fetch_premium()
+        premium_map, fund_list = fetch_premium()
+        if not fund_list:
+            print("  未获取到基金列表，退出")
+            return
         time.sleep(0.5)
-        price_map = fetch_prices()
+        price_map = fetch_prices(fund_list)
         time.sleep(0.5)
-        quota_map = fetch_quota()
-        rows = merge(premium_map, price_map, quota_map)
+        quota_map = fetch_quota(fund_list)
+        rows = merge(premium_map, price_map, quota_map, fund_list)
         save_history_csv(rows, now_str)
         title, content = build_wechat_message(rows, now_str)
 
