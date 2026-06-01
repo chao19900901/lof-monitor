@@ -314,7 +314,7 @@ def build_wechat_message(rows, now_str):
 
     # 套利机会（正溢价）
     if arb:
-        lines.append(f"### ⚡ 套利机会（正溢价｜{len(arb)}只）")
+        lines.append(f"### ⚡ 溢价机会（正溢价｜{len(arb)}只）")
         lines.append("")
         lines.append("| 基金 | 溢价 | 限额 | 状态 |")
         lines.append("|------|------|------|------|")
