@@ -49,64 +49,78 @@ def fetch_premium():
     """从主列表页一次性抓取所有基金的EST数据（官方EST、EST日期、官方溢价、参考EST溢价）"""
     url = "https://palmmicro.com/woody/res/lofcn.php?sort=premium"
     print("获取溢价率（主列表页）...")
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=15)
-        r.encoding = "utf-8"
-        html = r.text
+    
+    # 配置参数：超时时间60秒，最多重试3次
+    max_retries = 3
+    timeout = 60  # 1分钟超时
+    
+    for attempt in range(max_retries):
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=timeout)
+            r.encoding = "utf-8"
+            html = r.text
 
-        m = re.search(r'id="estimationtable".*?<tbody>(.*?)</tbody>', html, re.S)
-        if not m:
-            print("  未找到 estimationtable")
-            return {}, []
+            m = re.search(r'id="estimationtable".*?<tbody>(.*?)</tbody>', html, re.S)
+            if not m:
+                print("  未找到 estimationtable")
+                return {}, []
 
-        tbody = m.group(1)
-        result = {}
-        fund_list = []  # 新增：保存基金列表 [(full_code, code6, name), ...]
+            tbody = m.group(1)
+            result = {}
+            fund_list = []  # 新增：保存基金列表 [(full_code, code6, name), ...]
 
-        for row_m in re.finditer(r'<tr>(.*?)</tr>', tbody, re.S):
-            cells = re.findall(r'<td[^>]*>(.*?)</td>', row_m.group(1), re.S)
-            if len(cells) < 6:
-                continue
+            for row_m in re.finditer(r'<tr>(.*?)</tr>', tbody, re.S):
+                cells = re.findall(r'<td[^>]*>(.*?)</td>', row_m.group(1), re.S)
+                if len(cells) < 6:
+                    continue
 
-            code_m = re.search(r'>(S[HZ]\d{6})<', cells[0])
-            if not code_m:
-                continue
-            full_code = code_m.group(1)
-            code6 = full_code[2:]  # 提取6位代码
+                code_m = re.search(r'>(S[HZ]\d{6})<', cells[0])
+                if not code_m:
+                    continue
+                full_code = code_m.group(1)
+                code6 = full_code[2:]  # 提取6位代码
 
-            # 提取基金名称（在 <td> 标签的 title 属性中）
-            name_m = re.search(r'<td[^>]*title="([^"]+)"', row_m.group(1))
-            name = name_m.group(1) if name_m else '未知'
+                # 提取基金名称（在 <td> 标签的 title 属性中）
+                name_m = re.search(r'<td[^>]*title="([^"]+)"', row_m.group(1))
+                name = name_m.group(1) if name_m else '未知'
 
-            est_m = re.search(r'>([\d.]+)<', cells[1])
-            est = float(est_m.group(1)) if est_m else None
+                est_m = re.search(r'>([\d.]+)<', cells[1])
+                est = float(est_m.group(1)) if est_m else None
 
-            date_m = re.search(r'(\d{4}-\d{2}-\d{2})', cells[2])
-            est_date = date_m.group(1) if date_m else None
+                date_m = re.search(r'(\d{4}-\d{2}-\d{2})', cells[2])
+                est_date = date_m.group(1) if date_m else None
 
-            prem_m = re.search(r'>([-\d.]+)', cells[3])
-            premium = float(prem_m.group(1)) if prem_m else None
+                prem_m = re.search(r'>([-\d.]+)', cells[3])
+                premium = float(prem_m.group(1)) if prem_m else None
 
-            ref_premium = None
-            if cells[5].strip():
-                ref_m = re.search(r'>([-\d.]+)', cells[5])
-                ref_premium = float(ref_m.group(1)) if ref_m else None
+                ref_premium = None
+                if cells[5].strip():
+                    ref_m = re.search(r'>([-\d.]+)', cells[5])
+                    ref_premium = float(ref_m.group(1)) if ref_m else None
 
-            result[full_code] = {
-                "est": est,
-                "est_date": est_date,
-                "premium": premium,
-                "ref_premium": ref_premium,
-                "name": name,  # 保存基金名称
-            }
-            
-            fund_list.append((full_code, code6, name))
+                result[full_code] = {
+                    "est": est,
+                    "est_date": est_date,
+                    "premium": premium,
+                    "ref_premium": ref_premium,
+                    "name": name,  # 保存基金名称
+                }
+                
+                fund_list.append((full_code, code6, name))
 
-        print(f"  完成：{len(result)} 只")
-        return result, fund_list
-    except Exception as e:
-        print(f"  溢价获取失败: {e}")
-        return {}, []
+            print(f"  完成：{len(result)} 只")
+            return result, fund_list
+        except requests.exceptions.Timeout:
+            print(f"  第 {attempt + 1} 次请求超时，等待2秒后重试...")
+            time.sleep(2)
+        except Exception as e:
+            print(f"  第 {attempt + 1} 次请求失败: {e}")
+            if attempt < max_retries - 1:
+                print(f"  等待2秒后重试...")
+                time.sleep(2)
+    
+    print("  溢价获取失败: 已达到最大重试次数")
+    return {}, []
 
 def fetch_prices(fund_list):
     print("获取实时行情...")
