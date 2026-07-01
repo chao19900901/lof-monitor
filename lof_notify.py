@@ -51,8 +51,8 @@ def fetch_premium():
     print("获取溢价率（主列表页）...")
     
     # 配置参数：超时时间60秒，最多重试3次
-    max_retries = 3
-    timeout = 60  # 1分钟超时
+    max_retries = 6
+    timeout = 120  # 1分钟超时
     
     for attempt in range(max_retries):
         try:
